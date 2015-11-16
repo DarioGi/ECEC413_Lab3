@@ -6,11 +6,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
 #include <string.h>
 #include <math.h>
-
-
+#include <sys/time.h>
 #include "vec_mat_mult_kernel.cu"
 
 #define MIN_NUMBER 1
@@ -29,8 +27,8 @@ float get_random_number(int, int);
 int checkResults(float *, float *, int, float);
 
 
-int 
-main(int argc, char** argv) {
+int main(int argc, char** argv) 
+{
 	// Matrices for the program
 	Matrix  A; // N x N matrix
 	Matrix  X; // N x 1 vector
@@ -51,21 +49,24 @@ main(int argc, char** argv) {
 	Y_cpu  = allocate_matrix(MATRIX_SIZE, 1, 0); // Allocate memory for the output vectors
 	Y_gpu_1 = allocate_matrix(MATRIX_SIZE, 1, 0); 
     Y_gpu_2 = allocate_matrix(MATRIX_SIZE, 1, 0);
- 
+	struct timeval start, stop;	
+	gettimeofday(&start, NULL);
+	
     // compute the vector-matrix multiplication on the CPU for comparison    	
 
 	compute_gold(Y_cpu.elements, A.elements, X.elements, A.num_rows, A.num_columns);
-	
+	gettimeofday(&stop, NULL);
+	printf("Gold Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 	// Perform the vector-matrix multiplication on the GPU using global memory
     // Return the results in Y_gpu_1
+	
 	vec_mat_mult_on_device_using_global_memory(A, X, Y_gpu_1);
-   
+	
 	// check if the device result is equivalent to the expected solution
     printf("Checking against reference result. \n");
 	int size_elements = NUM_ROWS;
 	int res = checkResults(Y_cpu.elements, Y_gpu_1.elements, size_elements, 0.0001);
 	printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
-
 
     // Perform the vector-matrix multiplication on the GPU using global memory
     // Return the results in Y_gpu_2
@@ -88,10 +89,41 @@ main(int argc, char** argv) {
 
 // Complete the functionality of vector-matrix multiplication using the GPU 
 // Kernel should use global memory
-void 
-vec_mat_mult_on_device_using_global_memory(const Matrix A, const Matrix X, Matrix Y)
+void vec_mat_mult_on_device_using_global_memory(const Matrix A, const Matrix X, Matrix Y)
 {
+	Matrix d_A = allocate_matrix_on_gpu(A);
+	copy_matrix_to_device(d_A, A);
+	Matrix d_X = allocate_matrix_on_gpu(X);
+	copy_matrix_to_device(d_X, X);
+	Matrix d_Y = allocate_matrix_on_gpu(Y);
+	//copy_matrix_to_device(d_Y, Y);
+	
+	/* Set up execution grid. */
+	dim3 threads(TILE_SIZE, TILE_SIZE);
+	dim3 grid((d_A.num_columns + TILE_SIZE - 1)/TILE_SIZE, (d_A.num_rows + TILE_SIZE - 1)/TILE_SIZE);
+	
+	struct timeval start, stop;	
+	gettimeofday(&start, NULL);
+	/* Launch kernel. */
+	vec_mat_kernel_naive<<<grid, threads>>>(d_A.elements, d_X.elements, d_Y.elements);
+	cudaThreadSynchronize();
+	gettimeofday(&stop, NULL);
+	
+	printf("Global Memory Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
+	/* Check if kernel execution generated an error. */
+	cudaError_t err = cudaGetLastError();
+	if ( cudaSuccess != err ) 
+	{
+		fprintf(stderr, "Kernel execution failed: %s.\n", cudaGetErrorString(err));
+		return;
+	}
+	
+	copy_matrix_from_device(Y, d_Y);
+	
+	cudaFree(d_A.elements);
+	cudaFree(d_X.elements);
+	cudaFree(d_Y.elements);
 }
 
 // Complete the functionality of vector-matrix multiplication using the GPU
@@ -190,5 +222,3 @@ checkResults(float *reference, float *gpu_result, int num_elements, float thresh
     printf("Max epsilon = %f. \n", epsilon); 
     return checkMark;
 }
-
-
