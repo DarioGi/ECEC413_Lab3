@@ -138,8 +138,8 @@ void vec_mat_mult_on_device_using_shared_memory(const Matrix A, const Matrix X, 
 	
 	/* Set up execution grid. */
 	/* Allocate space for the lock on the GPU and initialize it. */
-	dim3 threads(1, TILE_SIZE);
-	dim3 grid(1, (d_A.num_rows + TILE_SIZE - 1)/TILE_SIZE);
+	dim3 threads(TILE_SIZE_OPTIMIZED, TILE_SIZE_OPTIMIZED);
+	dim3 grid(1, (d_A.num_rows + TILE_SIZE_OPTIMIZED - 1)/TILE_SIZE_OPTIMIZED);
 	
 	struct timeval start, stop;	
 	gettimeofday(&start, NULL);

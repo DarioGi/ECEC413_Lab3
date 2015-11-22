@@ -1,0 +1,43 @@
+1024 
+Gold Execution time = 0.002702s.
+Global Memory Execution time = 0.001256s.
+Checking against reference result.
+Max epsilon = 0.000000.
+Test PASSED
+Shared Memory Execution time = 0.000280s.
+Checking against reference result.
+Max epsilon = 0.000000.
+Test PASSED
+
+2048
+Gold Execution time = 0.009632s.
+Global Memory Execution time = 0.005592s.
+Checking against reference result.
+Max epsilon = 0.000000.
+Test PASSED
+Shared Memory Execution time = 0.000986s.
+Checking against reference result.
+Max epsilon = 0.000000.
+Test PASSED
+
+4096
+Gold Execution time = 0.028608s.
+Global Memory Execution time = 0.021525s.
+Checking against reference result.
+Max epsilon = 0.000000.
+Test PASSED
+Shared Memory Execution time = 0.003927s.
+Checking against reference result.
+Max epsilon = 0.000000.
+Test PASSED
+
+8192
+Gold Execution time = 0.114194s.
+Global Memory Execution time = 0.093821s.
+Checking against reference result.
+Max epsilon = 0.000000.
+Test PASSED
+Shared Memory Execution time = 0.015940s.
+Checking against reference result.
+Max epsilon = 0.000000.
+Test PASSED
