@@ -2,10 +2,10 @@
 #define _MATRIXMUL_H_
 
 // Define matrix dimensions
-#define MATRIX_SIZE 1024
+#define MATRIX_SIZE 8192
 #define NUM_COLUMNS MATRIX_SIZE // Number of columns in Matrix A
 #define NUM_ROWS MATRIX_SIZE // Number of rows in Matrix A
-#define TILE_SIZE 16
+#define TILE_SIZE 256
 
 // Matrix Structure declaration
 typedef struct {
@@ -19,7 +19,6 @@ typedef struct {
 	//Pointer to the first element of the matrix represented
     float* elements;
 } Matrix;
-
 
 #endif // _MATRIXMUL_H_
 

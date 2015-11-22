@@ -99,8 +99,8 @@ void vec_mat_mult_on_device_using_global_memory(const Matrix A, const Matrix X, 
 	//copy_matrix_to_device(d_Y, Y);
 	
 	/* Set up execution grid. */
-	dim3 threads(TILE_SIZE, TILE_SIZE);
-	dim3 grid((d_A.num_columns + TILE_SIZE - 1)/TILE_SIZE, (d_A.num_rows + TILE_SIZE - 1)/TILE_SIZE);
+	dim3 threads(1, TILE_SIZE);
+	dim3 grid(1, (d_A.num_rows + TILE_SIZE - 1)/TILE_SIZE);
 	
 	struct timeval start, stop;	
 	gettimeofday(&start, NULL);
@@ -128,10 +128,41 @@ void vec_mat_mult_on_device_using_global_memory(const Matrix A, const Matrix X, 
 
 // Complete the functionality of vector-matrix multiplication using the GPU
 // Kernel should use shared memory
-void 
-vec_mat_mult_on_device_using_shared_memory(const Matrix A, const Matrix X, Matrix Y)
+void vec_mat_mult_on_device_using_shared_memory(const Matrix A, const Matrix X, Matrix Y)
 {
+	Matrix d_A = allocate_matrix_on_gpu(A);
+	copy_matrix_to_device(d_A, A);
+	Matrix d_X = allocate_matrix_on_gpu(X);
+	copy_matrix_to_device(d_X, X);
+	Matrix d_Y = allocate_matrix_on_gpu(Y);
+	
+	/* Set up execution grid. */
+	/* Allocate space for the lock on the GPU and initialize it. */
+	dim3 threads(1, TILE_SIZE);
+	dim3 grid(1, (d_A.num_rows + TILE_SIZE - 1)/TILE_SIZE);
+	
+	struct timeval start, stop;	
+	gettimeofday(&start, NULL);
+	/* Launch kernel. */
+	vec_mat_kernel_optimized<<<grid, threads>>>(d_A.elements, d_X.elements, d_Y.elements);
+	cudaThreadSynchronize();
+	gettimeofday(&stop, NULL);
+	
+	printf("Shared Memory Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
+	/* Check if kernel execution generated an error. */
+	cudaError_t err = cudaGetLastError();
+	if ( cudaSuccess != err ) 
+	{
+		fprintf(stderr, "Kernel execution failed: %s.\n", cudaGetErrorString(err));
+		return;
+	}
+	
+	copy_matrix_from_device(Y, d_Y);
+	
+	cudaFree(d_A.elements);
+	cudaFree(d_X.elements);
+	cudaFree(d_Y.elements);
 }
 
 
